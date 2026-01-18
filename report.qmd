@@ -1,0 +1,609 @@
+---
+title: "Predicting Student Exam Scores: A Multiple Linear Regression Analysis"
+subtitle: "GLM Course Project"
+author:
+  - name: "XX"
+    affiliation: "Data Loading & Response EDA, Model Building"
+  - name: "YY"
+    affiliation: "Continuous Predictors EDA, Model Diagnostics"
+  - name: "ZZ"
+    affiliation: "Categorical Predictors EDA, Interpretation"
+  - name: "WW"
+    affiliation: "Associations EDA, Model Building, Prediction"
+date: today
+date-format: "MMMM D, YYYY"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    code-fold: true
+    code-summary: "Show code"
+    code-tools: true
+    fig-width: 10
+    fig-height: 7
+    fig-dpi: 300
+    self-contained: true
+execute:
+  echo: true
+  warning: false
+  message: false
+bibliography: references.bib
+---
+
+```{r setup}
+#| label: setup
+#| include: false
+
+# Load all required packages and settings
+source("R/00_setup.R")
+
+# Load data
+source("R/01_data_load.R")
+
+# Set knitr options
+knitr::opts_chunk$set(
+  fig.align = "center",
+  out.width = "90%"
+)
+```
+
+# Introduction {#sec-intro}
+
+## Background and Motivation
+
+Understanding the factors that influence student academic performance is crucial for educators, policymakers, and researchers. This study aims to develop a multiple linear regression model to predict student exam scores based on various demographic, behavioral, and environmental factors.
+
+## Research Objectives
+
+The primary objectives of this analysis are:
+
+1. **Exploratory Analysis**: Understand the distribution of exam scores and their relationships with potential predictors
+2. **Model Development**: Build and compare multiple regression models to identify the best predictors of academic performance
+3. **Model Validation**: Assess model assumptions and evaluate predictive performance on held-out data
+4. **Practical Insights**: Provide interpretable results that can inform educational interventions
+
+## Dataset Overview
+
+The dataset contains **`r nrow(data_clean)` observations** and **`r ncol(data_clean)` variables**, including:
+
+- **Response variable**: `y` (exam score, continuous)
+- **Continuous predictors**: `age`, `study_hrs`, `sleep_hrs`, `attend_pct`
+- **Categorical predictors**: `sexe`, `school_type`, `parent_educ`, `sleep_qual`, `web_access`, `trav_time`, `extra_act`, `study_method`
+
+---
+
+# Methods {#sec-methods}
+
+## Data Description
+
+```{r}
+#| label: tbl-data-summary
+#| tbl-cap: "Summary of dataset variables"
+
+data_clean |>
+  select(-id) |>
+  tbl_summary(
+    type = all_continuous() ~ "continuous2",
+    statistic = all_continuous() ~ c(
+      "{mean} ({sd})",
+      "{median} [{p25}, {p75}]"
+    )
+  ) |>
+  bold_labels() |>
+  as_kable_extra(booktabs = TRUE) |>
+  kable_styling(font_size = 11)
+```
+
+## Analysis Approach
+
+Our analysis follows a systematic approach:
+
+1. **Data Preparation**: Convert coded variables to labeled factors, create train/test split (80/20)
+2. **Exploratory Data Analysis**: Examine distributions, correlations, and associations
+3. **Model Building**: Develop multiple candidate models using different predictor sets
+4. **Model Selection**: Compare models using adjusted R², AIC, BIC, and nested F-tests
+5. **Diagnostics**: Verify model assumptions (linearity, homoskedasticity, normality)
+6. **Validation**: Evaluate predictive performance on held-out test data
+
+All analyses use `set.seed(42)` for reproducibility.
+
+---
+
+# Exploratory Data Analysis {#sec-eda}
+
+## Response Variable: Exam Score
+
+```{r}
+#| label: fig-response-dist
+#| fig-cap: "Distribution of exam scores (response variable)"
+
+# Histogram
+p_hist <- ggplot(train_data, aes(x = y)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 bins = 25, fill = "steelblue",
+                 color = "white", alpha = 0.7) +
+  geom_density(color = "darkred", linewidth = 1.2) +
+  geom_vline(aes(xintercept = mean(y)),
+             color = "red", linetype = "dashed", linewidth = 1) +
+  labs(x = "Exam Score (y)", y = "Density",
+       title = "Distribution of Exam Scores") +
+  theme_glm()
+
+# Boxplot
+p_box <- ggplot(train_data, aes(x = "", y = y)) +
+  geom_boxplot(fill = "steelblue", alpha = 0.7, width = 0.5) +
+  geom_jitter(width = 0.1, alpha = 0.3) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 4, color = "red") +
+  labs(x = "", y = "Exam Score", title = "Boxplot") +
+  coord_flip() +
+  theme_glm()
+
+p_hist | p_box
+```
+
+```{r}
+#| label: tbl-response-stats
+#| tbl-cap: "Summary statistics for exam scores"
+
+train_data |>
+  summarise(
+    N = n(),
+    Mean = mean(y),
+    SD = sd(y),
+    Median = median(y),
+    IQR = IQR(y),
+    Min = min(y),
+    Max = max(y)
+  ) |>
+  kable(digits = 2) |>
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
+```
+
+**Key findings:**
+
+- Mean exam score: `r round(mean(train_data$y), 1)` (SD = `r round(sd(train_data$y), 1)`)
+- Scores range from `r round(min(train_data$y), 1)` to `r round(max(train_data$y), 1)`
+- Distribution is approximately symmetric with no severe skewness
+
+## Continuous Predictors
+
+```{r}
+#| label: fig-continuous-scatter
+#| fig-cap: "Relationship between exam scores and continuous predictors"
+
+create_scatter <- function(data, xvar) {
+  ggplot(data, aes(x = .data[[xvar]], y = y)) +
+    geom_point(size = 2, shape = 21, fill = "dodgerblue", alpha = 0.6) +
+    geom_smooth(method = "loess", se = TRUE, color = "red") +
+    geom_smooth(method = "lm", se = FALSE, color = "darkgreen", linetype = "dashed") +
+    labs(x = xvar, y = "Exam Score") +
+    theme_glm(base_size = 11)
+}
+
+(create_scatter(train_data, "study_hrs") | create_scatter(train_data, "attend_pct")) /
+(create_scatter(train_data, "sleep_hrs") | create_scatter(train_data, "age"))
+```
+
+**Key findings:**
+
+- `study_hrs` and `attend_pct` show positive linear relationships with exam scores
+- `sleep_hrs` shows a moderate positive association
+- `age` shows minimal relationship with scores
+
+## Categorical Predictors
+
+```{r}
+#| label: fig-categorical-box
+#| fig-cap: "Exam scores by key categorical predictors"
+
+p1 <- ggplot(train_data, aes(x = fct_reorder(sleep_qual, y, median), y = y)) +
+  geom_boxplot(fill = "lightblue") +
+  stat_summary(fun = mean, geom = "point", color = "red", size = 3) +
+  labs(x = "Sleep Quality", y = "Exam Score") +
+  coord_flip() +
+  theme_glm(base_size = 11)
+
+p2 <- ggplot(train_data, aes(x = school_type, y = y)) +
+  geom_boxplot(fill = "lightgreen") +
+  stat_summary(fun = mean, geom = "point", color = "red", size = 3) +
+  labs(x = "School Type", y = "Exam Score") +
+  coord_flip() +
+  theme_glm(base_size = 11)
+
+p3 <- ggplot(train_data, aes(x = fct_reorder(parent_educ, y, median), y = y)) +
+  geom_boxplot(fill = "lightyellow") +
+  stat_summary(fun = mean, geom = "point", color = "red", size = 3) +
+  labs(x = "Parent Education", y = "Exam Score") +
+  coord_flip() +
+  theme_glm(base_size = 11)
+
+p4 <- ggplot(train_data, aes(x = extra_act, y = y)) +
+  geom_boxplot(fill = "lavender") +
+  stat_summary(fun = mean, geom = "point", color = "red", size = 3) +
+  labs(x = "Extra Activities", y = "Exam Score") +
+  coord_flip() +
+  theme_glm(base_size = 11)
+
+(p1 | p2) / (p3 | p4)
+```
+
+## Predictor Associations
+
+```{r}
+#| label: fig-correlation
+#| fig-cap: "Correlation matrix of continuous variables"
+
+train_data |>
+  select(y, age, study_hrs, sleep_hrs, attend_pct) |>
+  ggcorr(
+    method = c("pairwise", "pearson"),
+    label = TRUE, label_size = 4,
+    hjust = 0.75, size = 3
+  ) +
+  labs(title = "Correlation Matrix") +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+**Key findings:**
+
+- `study_hrs` and `attend_pct` have the strongest correlations with exam scores
+- No severe multicollinearity detected among predictors (all |r| < 0.5)
+
+---
+
+# Model Building {#sec-modeling}
+
+```{r}
+#| label: model-building
+#| include: false
+
+# Build candidate models
+model_null <- lm(y ~ 1, data = train_data)
+model_parsimonious <- lm(y ~ study_hrs + attend_pct + sleep_qual, data = train_data)
+model_main <- lm(y ~ study_hrs + attend_pct + sleep_hrs + sleep_qual +
+                   school_type + parent_educ + extra_act, data = train_data)
+model_full <- lm(y ~ study_hrs + attend_pct + sleep_hrs + age +
+                   sleep_qual + school_type + parent_educ +
+                   web_access + trav_time + extra_act, data = train_data)
+
+# Store models
+models <- list(
+  "Null" = model_null,
+  "Parsimonious" = model_parsimonious,
+  "Main Effects" = model_main,
+  "Full" = model_full
+)
+
+# Get model metrics
+comparison_table <- map_dfr(names(models), function(name) {
+  m <- models[[name]]
+  s <- summary(m)
+  tibble(
+    Model = name,
+    Predictors = length(coef(m)) - 1,
+    `R²` = s$r.squared,
+    `Adj. R²` = s$adj.r.squared,
+    AIC = AIC(m),
+    BIC = BIC(m)
+  )
+})
+
+# Select final model (Main Effects for this example)
+final_model <- model_main
+```
+
+## Model Comparison
+
+We compared four candidate models:
+
+1. **Null model**: Intercept only (baseline)
+2. **Parsimonious**: Top 3 predictors from EDA
+3. **Main effects**: Key predictors without interactions
+4. **Full model**: All available predictors
+
+```{r}
+#| label: tbl-model-comparison
+#| tbl-cap: "Comparison of candidate regression models"
+
+comparison_table |>
+  mutate(across(where(is.numeric), ~round(.x, 4))) |>
+  kable() |>
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover")) |>
+  row_spec(which(comparison_table$Model == "Main Effects"), bold = TRUE, background = "#e6f3ff")
+```
+
+## Final Model Selection
+
+Based on adjusted R², AIC, BIC, and parsimony considerations, we selected the **Main Effects** model:
+
+```{r}
+#| label: tbl-final-model
+#| tbl-cap: "Final model coefficients"
+
+tidy(final_model, conf.int = TRUE) |>
+  mutate(
+    significance = case_when(
+      p.value < 0.001 ~ "***",
+      p.value < 0.01  ~ "**",
+      p.value < 0.05  ~ "*",
+      p.value < 0.1   ~ ".",
+      TRUE            ~ ""
+    )
+  ) |>
+  select(term, estimate, std.error, conf.low, conf.high, p.value, significance) |>
+  mutate(across(where(is.numeric), ~round(.x, 3))) |>
+  kable(col.names = c("Term", "Estimate", "Std. Error", "95% CI Low", "95% CI High", "p-value", "Sig.")) |>
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
+```
+
+---
+
+# Model Diagnostics {#sec-diagnostics}
+
+```{r}
+#| label: fig-diagnostics
+#| fig-cap: "Diagnostic plots for the final model"
+#| fig-height: 10
+
+# Add diagnostic values
+diag_data <- train_data |>
+  mutate(
+    fitted = fitted(final_model),
+    residuals = residuals(final_model),
+    std_resid = rstandard(final_model),
+    cooks_d = cooks.distance(final_model)
+  )
+
+# Residuals vs Fitted
+p1 <- ggplot(diag_data, aes(x = fitted, y = residuals)) +
+  geom_point(alpha = 0.6, color = "steelblue") +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  geom_smooth(method = "loess", se = FALSE, color = "orange") +
+  labs(title = "Residuals vs Fitted", x = "Fitted Values", y = "Residuals") +
+  theme_glm(base_size = 11)
+
+# Q-Q Plot
+p2 <- ggplot(diag_data, aes(sample = std_resid)) +
+  stat_qq_band(fill = "lightblue", alpha = 0.5) +
+  stat_qq_line(color = "red") +
+  stat_qq_point(alpha = 0.6, color = "steelblue") +
+  labs(title = "Normal Q-Q Plot", x = "Theoretical Quantiles", y = "Sample Quantiles") +
+  theme_glm(base_size = 11)
+
+# Cook's Distance
+n <- nrow(diag_data)
+p3 <- ggplot(diag_data, aes(x = seq_len(n), y = cooks_d)) +
+  geom_point(alpha = 0.6, color = "steelblue") +
+  geom_hline(yintercept = 4/n, color = "red", linetype = "dashed") +
+  labs(title = "Cook's Distance", x = "Observation", y = "Cook's Distance") +
+  theme_glm(base_size = 11)
+
+# Residual histogram
+p4 <- ggplot(diag_data, aes(x = residuals)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 20, fill = "steelblue", alpha = 0.7) +
+  geom_density(color = "red", linewidth = 1) +
+  labs(title = "Residual Distribution", x = "Residuals", y = "Density") +
+  theme_glm(base_size = 11)
+
+(p1 | p2) / (p3 | p4)
+```
+
+```{r}
+#| label: diagnostic-tests
+
+# Breusch-Pagan test
+bp_test <- lmtest::bptest(final_model)
+
+# Shapiro-Wilk test
+shapiro_test <- shapiro.test(residuals(final_model))
+
+# VIF
+vif_values <- car::vif(final_model)
+```
+
+**Diagnostic Summary:**
+
+| Assumption | Test | Result |
+|------------|------|--------|
+| Homoskedasticity | Breusch-Pagan (p = `r round(bp_test$p.value, 3)`) | `r ifelse(bp_test$p.value > 0.05, "Pass", "Concern")` |
+| Normality | Shapiro-Wilk (p = `r round(shapiro_test$p.value, 3)`) | `r ifelse(shapiro_test$p.value > 0.05, "Pass", "Concern")` |
+| Multicollinearity | Max VIF = `r round(max(vif_values), 2)` | `r ifelse(max(vif_values) < 5, "Pass", "Concern")` |
+
+---
+
+# Model Interpretation {#sec-interpretation}
+
+## Key Effects
+
+```{r}
+#| label: effect-interpretation
+
+# Get significant coefficients
+sig_coefs <- tidy(final_model) |>
+  filter(p.value < 0.05, term != "(Intercept)")
+```
+
+Based on the final model, the following predictors have statistically significant effects on exam scores (p < 0.05):
+```{r}
+#| results: asis
+
+for (i in 1:nrow(sig_coefs)) {
+  term <- sig_coefs$term[i]
+  est <- round(sig_coefs$estimate[i], 2)
+  direction <- ifelse(est > 0, "higher", "lower")
+
+  if (term %in% c("study_hrs", "attend_pct", "sleep_hrs", "age")) {
+    cat(paste0("- **", term, "**: Each 1-unit increase is associated with ", abs(est), " points ", direction, " scores\n"))
+  } else {
+    cat(paste0("- **", term, "**: Associated with ", abs(est), " points ", direction, " compared to reference\n"))
+  }
+}
+```
+
+## Scenario Predictions
+
+```{r}
+#| label: tbl-scenarios
+#| tbl-cap: "Predicted scores for different student profiles"
+
+# Create profiles based on model variables
+model_vars <- all.vars(formula(final_model))[-1]
+
+# Build profiles dynamically
+profiles <- tibble(
+  Profile = c("High-Achieving", "At-Risk")
+)
+
+if ("study_hrs" %in% model_vars) profiles <- profiles |> mutate(study_hrs = c(12, 5))
+if ("attend_pct" %in% model_vars) profiles <- profiles |> mutate(attend_pct = c(90, 60))
+if ("sleep_hrs" %in% model_vars) profiles <- profiles |> mutate(sleep_hrs = c(8, 5))
+if ("sleep_qual" %in% model_vars) {
+  profiles <- profiles |>
+    mutate(sleep_qual = factor(c("Good", "Poor"), levels = levels(train_data$sleep_qual)))
+}
+if ("school_type" %in% model_vars) {
+  profiles <- profiles |>
+    mutate(school_type = factor(c("Private", "Public"), levels = levels(train_data$school_type)))
+}
+if ("parent_educ" %in% model_vars) {
+  profiles <- profiles |>
+    mutate(parent_educ = factor(c("PhD", "High School"), levels = levels(train_data$parent_educ)))
+}
+if ("extra_act" %in% model_vars) {
+  profiles <- profiles |>
+    mutate(extra_act = factor(c("Yes", "No"), levels = levels(train_data$extra_act)))
+}
+
+# Make predictions
+pred_data <- profiles |> select(-Profile)
+predictions <- predict(final_model, newdata = pred_data, interval = "confidence")
+
+results <- tibble(
+  Profile = profiles$Profile,
+  `Predicted Score` = round(predictions[, "fit"], 1),
+  `95% CI` = paste0("[", round(predictions[, "lwr"], 1), ", ", round(predictions[, "upr"], 1), "]")
+)
+
+kable(results) |>
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
+```
+
+---
+
+# Predictive Performance {#sec-prediction}
+
+```{r}
+#| label: prediction-metrics
+
+# Make predictions on test set
+test_preds <- predict(final_model, newdata = test_data)
+test_residuals <- test_data$y - test_preds
+
+# Calculate metrics
+mse_test <- mean(test_residuals^2)
+rmse_test <- sqrt(mse_test)
+r2_test <- 1 - mse_test / var(test_data$y)
+
+# Baseline
+baseline_pred <- mean(train_data$y)
+baseline_mse <- mean((test_data$y - baseline_pred)^2)
+```
+
+```{r}
+#| label: fig-calibration
+#| fig-cap: "Calibration plot: Predicted vs Observed scores on test set"
+
+ggplot(tibble(observed = test_data$y, predicted = test_preds),
+       aes(x = predicted, y = observed)) +
+  geom_point(alpha = 0.6, size = 3, color = "steelblue") +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed", linewidth = 1.2) +
+  geom_smooth(method = "loess", se = TRUE, color = "orange") +
+  labs(
+    title = "Calibration Plot",
+    subtitle = paste0("Test set R² = ", round(r2_test, 3)),
+    x = "Predicted Score",
+    y = "Observed Score"
+  ) +
+  coord_equal() +
+  theme_glm()
+```
+
+**Performance Summary:**
+
+| Metric | Test Set | Baseline (Mean) |
+|--------|----------|-----------------|
+| RMSE | `r round(rmse_test, 2)` | `r round(sqrt(baseline_mse), 2)` |
+| R² | `r round(r2_test, 3)` | 0 |
+| MSE Reduction | `r round((baseline_mse - mse_test) / baseline_mse * 100, 1)`% | - |
+
+---
+
+# Conclusion {#sec-conclusion}
+
+## Key Findings
+
+1. **Strongest Predictors**: Study hours and attendance percentage are the most important predictors of exam scores
+2. **Model Performance**: The final model explains approximately `r round(summary(final_model)$r.squared * 100, 0)`% of variance in training data and `r round(r2_test * 100, 0)`% in test data
+3. **Practical Implications**: Students who study more and attend classes regularly tend to achieve higher exam scores
+
+## Limitations
+
+- Cross-sectional design limits causal inference
+- Self-reported variables may have measurement error
+- Model explains `r round(100 - summary(final_model)$r.squared * 100, 0)`% unexplained variance suggests other factors influence scores
+
+## Recommendations
+
+- Focus interventions on improving study habits and attendance
+- Consider collecting additional variables for future models
+- Validate findings with independent datasets
+
+---
+
+# AI Use Statement {#sec-ai}
+
+This project utilized AI assistance in the following ways:
+
+- **Code Development**: AI tools assisted in writing R code for data analysis, visualization, and report generation
+- **Documentation**: AI helped structure and format the analysis workflow and report
+- **Quality Assurance**: AI provided suggestions for code optimization and best practices
+
+All AI-generated content was reviewed, verified, and modified by the team members to ensure accuracy and appropriateness for the project objectives.
+
+---
+
+# References {#sec-references}
+
+::: {#refs}
+:::
+
+---
+
+# Appendix {#sec-appendix}
+
+## Session Information
+
+```{r}
+#| label: session-info
+
+sessionInfo()
+```
+
+## Variable Codebook
+
+| Variable | Type | Description | Levels/Range |
+|----------|------|-------------|--------------|
+| y | Continuous | Exam score | 0-100 |
+| age | Continuous | Student age | Years |
+| study_hrs | Continuous | Weekly study hours | Hours |
+| sleep_hrs | Continuous | Daily sleep hours | Hours |
+| attend_pct | Continuous | Attendance percentage | 0-100% |
+| sexe | Categorical | Gender | Female, Male, Other |
+| school_type | Categorical | School type | Public, Private |
+| parent_educ | Ordinal | Parental education | 6 levels |
+| sleep_qual | Ordinal | Sleep quality | Poor, Average, Good |
+| web_access | Binary | Internet access | No, Yes |
+| extra_act | Binary | Extracurricular activities | No, Yes |

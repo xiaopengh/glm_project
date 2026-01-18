@@ -1,0 +1,12 @@
+# Ignore reference / legacy code
+reference_code/
+
+# Ignore rendered output
+output/
+
+# Ignore data processing scripts
+data/
+
+# Ignore temporary experiments
+sandbox/
+scratch/

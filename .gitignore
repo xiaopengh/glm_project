@@ -1,0 +1,98 @@
+############################
+# R / RStudio
+############################
+
+.Rproj.user/
+*.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+############################
+# Quarto
+############################
+
+.quarto/
+*_cache/
+*_files/
+
+############################
+# Output / Rendered files
+############################
+
+output/
+*.html
+*.pdf
+*.docx
+*.pptx
+
+############################
+# renv
+############################
+
+renv/library/
+renv/python/
+renv/staging/
+renv/cache/
+renv/.cache/
+renv.lock.tmp
+
+############################
+# Data (optional – adjust if needed)
+############################
+
+# Uncomment if raw or intermediate data should not be tracked
+# data/
+# *.csv
+# *.tsv
+# *.rds
+# *.xlsx
+
+############################
+# Environment / secrets
+############################
+
+.Renviron
+.env
+.env.*
+
+############################
+# Temporary / backup files
+############################
+
+*.tmp
+*.temp
+*~
+*.bak
+*.swp
+*.swo
+
+############################
+# OS-specific files
+############################
+
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+
+############################
+# IDEs / editors
+############################
+
+.vscode/
+.idea/
+*.code-workspace
+
+############################
+# Logs
+############################
+
+*.log
+
+############################
+# Misc
+############################
+
+.cache/
