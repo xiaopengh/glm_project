@@ -8,7 +8,7 @@ editor_options:
 
 This repository is a course project for GLM (Generalized Linear Models)
 in R programming language. We are 4 group members working on this
-project together: XX, YY, ZZ, and WW.
+project together: Yugoo, Xiaopeng, Shuaibo, and Yicheng.
 
 ## Project Overview
 
@@ -32,15 +32,15 @@ glm_project/
 │   └── project.csv
 ├── R/
 │   ├── 00_setup.R              # Shared setup (libraries, helpers) - COMPLETE
-│   ├── 01_data_load.R          # XX: Data loading (template with #TODOs)
-│   ├── 02_eda_response.R       # XX: Response EDA (template)
-│   ├── 02_eda_continuous.R     # YY: Continuous predictors EDA (template)
-│   ├── 02_eda_categorical.R    # ZZ: Categorical predictors EDA (template)
-│   ├── 02_eda_associations.R   # WW: Associations & collinearity (template)
-│   ├── 03_modeling.R           # XX+WW: Model building (template)
-│   ├── 04_diagnostics.R        # YY: Model diagnostics (template)
-│   ├── 05_interpretation.R     # ZZ: Interpretation (template)
-│   ├── 06_prediction.R         # WW: Predictive performance (template)
+│   ├── 01_data_load.R          # Yugoo: Data loading (template with #TODOs)
+│   ├── 02_eda_response.R       # Yugoo: Response EDA (template)
+│   ├── 02_eda_continuous.R     # Xiaopeng: Continuous predictors EDA (template)
+│   ├── 02_eda_categorical.R    # Shuaibo: Categorical predictors EDA (template)
+│   ├── 02_eda_associations.R   # Yicheng: Associations & collinearity (template)
+│   ├── 03_modeling.R           # Yugoo+Yicheng: Model building (template)
+│   ├── 04_diagnostics.R        # Xiaopeng: Model diagnostics (template)
+│   ├── 05_interpretation.R     # Shuaibo: Interpretation (template)
+│   ├── 06_prediction.R         # Yicheng: Predictive performance (template)
 │   ├── run_analysis.R          # Master script (template)
 │   └── *-claude.R              # Reference implementations (with actual code)
 ├── output/                     # Generated figures
@@ -53,8 +53,8 @@ glm_project/
 
 ## Task Assignments
 
-| Phase | XX | YY | ZZ | WW |
-|------------------|--------------|--------------|--------------|--------------|
+| Phase | Yugoo | Xiaopeng | Shuaibo | Yicheng |
+|---------------|---------------|---------------|---------------|---------------|
 | **1: EDA** | Data load + Response y | Continuous predictors | Categorical predictors | Associations |
 | **2: Modeling** | Model building | \- | \- | Model building |
 | **3: Analysis** | \- | Diagnostics | Interpretation | Prediction |
@@ -62,22 +62,22 @@ glm_project/
 
 ### Detailed Assignments
 
-**XX (Data & Response):** - `01_data_load.R` - Import data, convert
+**Yugoo (Data & Response):** - `01_data_load.R` - Import data, convert
 factors, train/test split - `02_eda_response.R` - Distribution of y,
-normality, outliers - `03_modeling.R` - Collaborate with WW on model
+normality, outliers - `03_modeling.R` - Collaborate with Yicheng on model
 building
 
-**YY (Continuous & Diagnostics):** - `02_eda_continuous.R` - Analyze
+**Xiaopeng (Continuous & Diagnostics):** - `02_eda_continuous.R` - Analyze
 age, study_hrs, sleep_hrs, attend_pct - `04_diagnostics.R` - Residual
 plots, normality, influence diagnostics
 
-**ZZ (Categorical & Interpretation):** - `02_eda_categorical.R` -
+**Shuaibo (Categorical & Interpretation):** - `02_eda_categorical.R` -
 Analyze all categorical variables - `05_interpretation.R` - Coefficient
 interpretation, scenario predictions
 
-**WW (Associations & Prediction):** - `02_eda_associations.R` -
+**Yicheng (Associations & Prediction):** - `02_eda_associations.R` -
 Correlations, collinearity, interaction hypotheses - `03_modeling.R` -
-Collaborate with XX on model building - `06_prediction.R` - Test set
+Collaborate with Yugoo on model building - `06_prediction.R` - Test set
 performance, calibration
 
 ------------------------------------------------------------------------
@@ -152,20 +152,20 @@ broom::tidy(model, conf.int = TRUE)
 
 ## Timeline Workflow
 
-```         
+```
 Phase 1: EDA (All work in parallel)
-    XX: 01_data_load.R + 02_eda_response.R
-    YY: 02_eda_continuous.R
-    ZZ: 02_eda_categorical.R
-    WW: 02_eda_associations.R
+    Yugoo: 01_data_load.R + 02_eda_response.R
+    Xiaopeng: 02_eda_continuous.R
+    Shuaibo: 02_eda_categorical.R
+    Yicheng: 02_eda_associations.R
          ↓
-Phase 2: Modeling (XX + WW collaborate)
+Phase 2: Modeling (Yugoo + Yicheng collaborate)
     03_modeling.R
          ↓
 Phase 3: Post-Modeling (All work in parallel)
-    YY: 04_diagnostics.R
-    ZZ: 05_interpretation.R
-    WW: 06_prediction.R
+    Xiaopeng: 04_diagnostics.R
+    Shuaibo: 05_interpretation.R
+    Yicheng: 06_prediction.R
          ↓
 Phase 4: Report Assembly (All collaborate)
     report.qmd

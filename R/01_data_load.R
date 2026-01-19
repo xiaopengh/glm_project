@@ -1,7 +1,7 @@
 # =============================================================================
 # 01_data_load.R - Data Loading & Factor Conversion
 # =============================================================================
-# Author: XX
+# Author: Yugoo
 # Task: Import dataset, convert categorical variables, create train/test split
 # =============================================================================
 

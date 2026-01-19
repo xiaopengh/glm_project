@@ -1,7 +1,7 @@
 # =============================================================================
 # 02_eda_categorical.R - Exploratory Data Analysis: Categorical Predictors
 # =============================================================================
-# Author: ZZ
+# Author: Shuaibo
 # Task: Analyze categorical predictors and their relationship with y
 # =============================================================================
 
