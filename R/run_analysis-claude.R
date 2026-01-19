@@ -2,7 +2,7 @@
 # run_analysis.R - Master Script for GLM Project
 # =============================================================================
 # This script runs the complete analysis pipeline
-# Authors: XX, YY, ZZ, WW
+# Authors: Yugoo, Xiaopeng, Shuaibo, Yicheng
 #
 # Usage: source("R/run_analysis.R")
 # Or from command line: Rscript R/run_analysis.R
@@ -55,16 +55,16 @@ cat("  - Test set: ", nrow(test_data), " observations\n")
 cat("\n[PHASE 2] Exploratory Data Analysis\n")
 cat(strrep("-", 50), "\n")
 
-cat("\n  [2A] Response variable EDA (XX)...\n")
+cat("\n  [2A] Response variable EDA (Yugoo)...\n")
 source("R/02_eda_response.R")
 
-cat("\n  [2B] Continuous predictors EDA (YY)...\n")
+cat("\n  [2B] Continuous predictors EDA (Xiaopeng)...\n")
 source("R/02_eda_continuous.R")
 
-cat("\n  [2C] Categorical predictors EDA (ZZ)...\n")
+cat("\n  [2C] Categorical predictors EDA (Shuaibo)...\n")
 source("R/02_eda_categorical.R")
 
-cat("\n  [2D] Predictor associations EDA (WW)...\n")
+cat("\n  [2D] Predictor associations EDA (Yicheng)...\n")
 source("R/02_eda_associations.R")
 
 cat("\nEDA complete.\n")
@@ -73,7 +73,7 @@ cat("\nEDA complete.\n")
 # Phase 3: Model Building
 # =============================================================================
 
-cat("\n[PHASE 3] Model Building & Selection (XX + WW)...\n")
+cat("\n[PHASE 3] Model Building & Selection (Yugoo + Yicheng)...\n")
 cat(strrep("-", 50), "\n")
 
 source("R/03_modeling.R")
@@ -86,7 +86,7 @@ cat("  - Adjusted R²: ", round(summary(final_model)$adj.r.squared, 4), "\n")
 # Phase 4: Model Diagnostics
 # =============================================================================
 
-cat("\n[PHASE 4] Model Diagnostics (YY)...\n")
+cat("\n[PHASE 4] Model Diagnostics (Xiaopeng)...\n")
 cat(strrep("-", 50), "\n")
 
 source("R/04_diagnostics.R")
@@ -97,7 +97,7 @@ cat("\nDiagnostics complete.\n")
 # Phase 5: Interpretation
 # =============================================================================
 
-cat("\n[PHASE 5] Model Interpretation (ZZ)...\n")
+cat("\n[PHASE 5] Model Interpretation (Shuaibo)...\n")
 cat(strrep("-", 50), "\n")
 
 source("R/05_interpretation.R")
@@ -108,7 +108,7 @@ cat("\nInterpretation complete.\n")
 # Phase 6: Predictive Performance
 # =============================================================================
 
-cat("\n[PHASE 6] Predictive Performance (WW)...\n")
+cat("\n[PHASE 6] Predictive Performance (Yicheng)...\n")
 cat(strrep("-", 50), "\n")
 
 source("R/06_prediction.R")

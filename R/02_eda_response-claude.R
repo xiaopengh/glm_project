@@ -1,7 +1,7 @@
 # =============================================================================
 # 02_eda_response.R - Exploratory Data Analysis: Response Variable
 # =============================================================================
-# Author: XX
+# Author: Yugoo
 # Task: Analyze the distribution of the response variable y (exam score)
 # =============================================================================
 

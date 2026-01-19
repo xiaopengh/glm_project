@@ -1,7 +1,7 @@
 # =============================================================================
 # 02_eda_associations.R - Exploratory Data Analysis: Predictor Associations
 # =============================================================================
-# Author: WW
+# Author: Yicheng
 # Task: Analyze associations between predictors and check for collinearity
 # =============================================================================
 
@@ -25,47 +25,11 @@ categorical_vars <- c("sexe", "school_type", "parent_educ", "sleep_qual",
 message("\n--- Correlation Matrix: Continuous Variables ---")
 
 # Calculate correlation matrix (including y)
-cor_matrix <- train_data |>
-  select(y, all_of(continuous_vars)) |>
-  cor(use = "pairwise.complete.obs")
+cor_matrix <- cor(select(train_data, y, all_of(continuous_vars)))
 
 print(round(cor_matrix, 3))
 
-# Identify high correlations (|r| > 0.5, excluding diagonal)
-high_cors <- which(abs(cor_matrix) > 0.5 & cor_matrix != 1, arr.ind = TRUE)
-if (nrow(high_cors) > 0) {
-  message("\nHigh correlations (|r| > 0.5):")
-  for (i in seq_len(nrow(high_cors))) {
-    row_name <- rownames(cor_matrix)[high_cors[i, 1]]
-    col_name <- colnames(cor_matrix)[high_cors[i, 2]]
-    if (high_cors[i, 1] < high_cors[i, 2]) {  # Avoid duplicates
-      message("  ", row_name, " - ", col_name, ": r = ",
-              round(cor_matrix[high_cors[i, 1], high_cors[i, 2]], 3))
-    }
-  }
-} else {
-  message("\nNo correlations above 0.5 threshold (good - low collinearity)")
-}
 
-# Correlation heatmap
-p_cor_heatmap <- train_data |>
-  select(y, all_of(continuous_vars)) |>
-  ggcorr(
-    method = c("pairwise", "pearson"),
-    label = TRUE,
-    label_size = 4,
-    label_round = 2,
-    hjust = 0.75,
-    size = 3,
-    layout.exp = 1
-  ) +
-  labs(title = "Correlation Heatmap: Response and Continuous Predictors") +
-  theme(plot.title = element_text(size = 14, face = "bold", hjust = 0.5))
-
-print(p_cor_heatmap)
-
-ggsave("output/fig_09_correlation_heatmap.png", p_cor_heatmap,
-       width = 8, height = 8, dpi = 300)
 
 # Pairs plot
 p_pairs <- train_data |>
