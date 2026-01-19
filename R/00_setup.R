@@ -4,7 +4,7 @@
 # This script contains common settings, packages, and helper functions
 # used across all analysis scripts.
 #
-# Authors: XX, YY, ZZ, WW
+# Authors: Yugoo, Xiaopeng, Shuaibo, Yicheng
 # =============================================================================
 
 # Reproducibility

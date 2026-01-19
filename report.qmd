@@ -2,13 +2,13 @@
 title: "Predicting Student Exam Scores: A Multiple Linear Regression Analysis"
 subtitle: "GLM Course Project"
 author:
-  - name: "XX"
+  - name: "Yugoo"
     affiliation: "Data Loading & Response EDA, Model Building"
-  - name: "YY"
+  - name: "Xiaopeng"
     affiliation: "Continuous Predictors EDA, Model Diagnostics"
-  - name: "ZZ"
+  - name: "Shuaibo"
     affiliation: "Categorical Predictors EDA, Interpretation"
-  - name: "WW"
+  - name: "Yicheng"
     affiliation: "Associations EDA, Model Building, Prediction"
 date: today
 date-format: "MMMM D, YYYY"

@@ -3,7 +3,7 @@
 Multiple linear regression analysis predicting student exam scores from demographic, behavioral, and environmental factors.
 
 ## Team Members
-- XX, YY, ZZ, WW
+- Yugoo, Xiaopeng, Shuaibo, Yicheng
 
 ---
 
@@ -61,11 +61,11 @@ git pull
 
 | Member | Owns These Files |
 |--------|------------------|
-| **XX** | `01_data_load.R`, `02_eda_response.R` |
-| **YY** | `02_eda_continuous.R`, `04_diagnostics.R` |
-| **ZZ** | `02_eda_categorical.R`, `05_interpretation.R` |
-| **WW** | `02_eda_associations.R`, `06_prediction.R` |
-| **XX+WW** | `03_modeling.R` (coordinate before editing) |
+| **Yugoo** | `01_data_load.R`, `02_eda_response.R` |
+| **Xiaopeng** | `02_eda_continuous.R`, `04_diagnostics.R` |
+| **Shuaibo** | `02_eda_categorical.R`, `05_interpretation.R` |
+| **Yicheng** | `02_eda_associations.R`, `06_prediction.R` |
+| **Yugoo+Yicheng** | `03_modeling.R` (coordinate before editing) |
 
 **If you need to edit someone else's file:** message them first and wait for confirmation.
 
@@ -137,12 +137,12 @@ glm_project/
 │   └── project.csv          # Dataset (DO NOT MODIFY)
 ├── R/
 │   ├── 00_setup.R           # Shared setup (COMPLETE)
-│   ├── 01_data_load.R       # XX: Data loading
+│   ├── 01_data_load.R       # Yugoo: Data loading
 │   ├── 02_eda_*.R           # EDA scripts (one per member)
-│   ├── 03_modeling.R        # XX+WW: Model building
-│   ├── 04_diagnostics.R     # YY: Diagnostics
-│   ├── 05_interpretation.R  # ZZ: Interpretation
-│   ├── 06_prediction.R      # WW: Prediction
+│   ├── 03_modeling.R        # Yugoo+Yicheng: Model building
+│   ├── 04_diagnostics.R     # Xiaopeng: Diagnostics
+│   ├── 05_interpretation.R  # Shuaibo: Interpretation
+│   ├── 06_prediction.R      # Yicheng: Prediction
 │   ├── run_analysis.R       # Master script
 │   └── *-claude.R           # Reference implementations
 ├── output/                  # Generated figures

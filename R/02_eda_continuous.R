@@ -1,7 +1,7 @@
 # =============================================================================
 # 02_eda_continuous.R - Exploratory Data Analysis: Continuous Predictors
 # =============================================================================
-# Author: YY
+# Author: Xiaopeng
 # Task: Analyze continuous predictors (age, study_hrs, sleep_hrs, attend_pct)
 # =============================================================================
 

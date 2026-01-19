@@ -1,7 +1,7 @@
 # =============================================================================
 # 03_modeling.R - Model Building & Selection
 # =============================================================================
-# Authors: XX + WW (Collaborative)
+# Authors: Yugoo + Yicheng (Collaborative)
 # Task: Build, compare, and select the best multiple regression model
 # =============================================================================
 
@@ -52,7 +52,7 @@ message("\n--- Building Multiple Regression Models ---")
 #                      sleep_qual + school_type + parent_educ +
 #                      web_access + trav_time + extra_act, data = train_data)
 
-# TODO: Model 5 (Interaction): Based on WW's hypotheses
+# TODO: Model 5 (Interaction): Based on Yicheng's hypotheses
 #   model_interaction <- lm(y ~ ... + study_hrs:sleep_qual +
 #                             attend_pct:school_type, data = train_data)
 

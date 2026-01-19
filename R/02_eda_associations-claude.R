@@ -1,7 +1,7 @@
 # =============================================================================
 # 02_eda_associations.R - Exploratory Data Analysis: Predictor Associations
 # =============================================================================
-# Author: WW
+# Author: Yicheng
 # Task: Analyze associations between predictors and check for collinearity
 # =============================================================================
 

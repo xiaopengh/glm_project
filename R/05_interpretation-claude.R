@@ -1,7 +1,7 @@
 # =============================================================================
 # 05_interpretation.R - Model Interpretation & Inference
 # =============================================================================
-# Author: ZZ
+# Author: Shuaibo
 # Task: Interpret model coefficients and make scenario-based predictions
 # =============================================================================
 
