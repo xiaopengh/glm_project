@@ -54,7 +54,7 @@ glm_project/
 ## Task Assignments
 
 | Phase | Yugoo | Xiaopeng | Shuaibo | Yicheng |
-|---------------|---------------|---------------|---------------|---------------|
+|----|----|----|----|----|
 | **1: EDA** | Data load + Response y | Continuous predictors | Categorical predictors | Associations |
 | **2: Modeling** | Model building | \- | \- | Model building |
 | **3: Analysis** | \- | Diagnostics | Interpretation | Prediction |
@@ -64,12 +64,12 @@ glm_project/
 
 **Yugoo (Data & Response):** - `01_data_load.R` - Import data, convert
 factors, train/test split - `02_eda_response.R` - Distribution of y,
-normality, outliers - `03_modeling.R` - Collaborate with Yicheng on model
-building
+normality, outliers - `03_modeling.R` - Collaborate with Yicheng on
+model building
 
-**Xiaopeng (Continuous & Diagnostics):** - `02_eda_continuous.R` - Analyze
-age, study_hrs, sleep_hrs, attend_pct - `04_diagnostics.R` - Residual
-plots, normality, influence diagnostics
+**Xiaopeng (Continuous & Diagnostics):** - `02_eda_continuous.R` -
+Analyze age, study_hrs, sleep_hrs, attend_pct - `04_diagnostics.R` -
+Residual plots, normality, influence diagnostics
 
 **Shuaibo (Categorical & Interpretation):** - `02_eda_categorical.R` -
 Analyze all categorical variables - `05_interpretation.R` - Coefficient
@@ -152,7 +152,7 @@ broom::tidy(model, conf.int = TRUE)
 
 ## Timeline Workflow
 
-```
+```         
 Phase 1: EDA (All work in parallel)
     Yugoo: 01_data_load.R + 02_eda_response.R
     Xiaopeng: 02_eda_continuous.R
