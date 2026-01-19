@@ -139,19 +139,48 @@ ggsave("output/fig_01_response_distribution.png", p_response_combined,
 
 message("\n--- Normality Assessment ---")
 
-# TODO: Perform Shapiro-Wilk test: shapiro.test(train_data$y)
-#   - Report W statistic and p-value
-#   - Interpret result (p > 0.05 suggests normality)
+# Shapiro-Wilk test
 
-# TODO: Interpret skewness:
+shapiro_result <- shapiro.test(train_data$y)
+message("Shapiro-Wilk test:")
+message("  W = ", round(shapiro_result$statistic, 4))
+message("  p-value = ", format.pval(shapiro_result$p.value, digits = 4))
+
+if (shapiro_result$p.value > 0.05) {
+  message("  Conclusion: Cannot reject normality (p > 0.05)")
+} else {
+  message("  Conclusion: Evidence against normality (p < 0.05)")
+}
+
+# Interpret skewness and kurtosis
 #   - |skew| < 0.5: approximately symmetric
 #   - skew > 0: right-skewed
 #   - skew < 0: left-skewed
-
-# TODO: Interpret kurtosis:
 #   - kurt ≈ 3: mesokurtic (normal-like)
 #   - kurt > 3: leptokurtic (heavy tails)
 #   - kurt < 3: platykurtic (light tails)
+
+skew <- moments::skewness(train_data$y)
+kurt <- moments::kurtosis(train_data$y)
+
+message("\nSkewness: ", round(skew, 3))
+if (abs(skew) < 0.5) {
+  message("  Interpretation: Approximately symmetric")
+} else if (skew > 0) {
+  message("  Interpretation: Right-skewed (positive skew)")
+} else {
+  message("  Interpretation: Left-skewed (negative skew)")
+}
+
+message("\nKurtosis: ", round(kurt, 3))
+if (abs(kurt - 3) < 0.5) {
+  message("  Interpretation: Approximately mesokurtic (normal-like)")
+} else if (kurt > 3) {
+  message("  Interpretation: Leptokurtic (heavy tails)")
+} else {
+  message("  Interpretation: Platykurtic (light tails)")
+}
+
 
 # =============================================================================
 # 4. Outlier Identification
@@ -159,15 +188,33 @@ message("\n--- Normality Assessment ---")
 
 message("\n--- Outlier Identification (IQR Rule) ---")
 
-# TODO: Calculate Q1, Q3, IQR for y
+# Calculate Q1, Q3, IQR for y
 
-# TODO: Calculate lower fence = Q1 - 1.5*IQR
+Q1 <- quantile(train_data$y, 0.25)
+Q3 <- quantile(train_data$y, 0.75)
+IQR_y <- Q3 - Q1
 
-# TODO: Calculate upper fence = Q3 + 1.5*IQR
+#lower & upper fence
 
-# TODO: Identify outliers (observations outside fences)
+lower_fence <- Q1 - 1.5 * IQR_y
+upper_fence <- Q3 + 1.5 * IQR_y
 
-# TODO: Report number of outliers and their values
+#Outliers
+
+outliers <- train_data |>
+  filter(y < lower_fence | y > upper_fence) |>
+  arrange(y)
+
+#Report
+
+message("Lower fence: ", round(lower_fence, 2))
+message("Upper fence: ", round(upper_fence, 2))
+message("Number of outliers: ", nrow(outliers))
+
+if (nrow(outliers) > 0) {
+  message("\nOutlier observations:")
+  print(outliers |> select(id, y, study_hrs, attend_pct, sleep_qual))
+}
 
 # =============================================================================
 # 5. Transformation Assessment
@@ -175,12 +222,41 @@ message("\n--- Outlier Identification (IQR Rule) ---")
 
 message("\n--- Transformation Assessment ---")
 
-# TODO: If skewness > 1, compare transformations:
-#   - Original skewness
-#   - Log(y) skewness (if all y > 0)
-#   - Sqrt(y) skewness (if all y >= 0)
+message("
+Based on the analysis:
+")
 
-# TODO: Make recommendation about transformation need
+if (abs(skew) > 1) {
+  message("- Skewness (", round(skew, 2), ") suggests transformation may be beneficial")
+  
+  # Compare original vs log/sqrt transformations
+  message("\nComparing transformations:")
+  message("  Original skewness: ", round(skew, 3))
+  
+  # Log transformation (only if all values > 0)
+  if (all(train_data$y > 0)) {
+    log_skew <- moments::skewness(log(train_data$y))
+    message("  Log(y) skewness: ", round(log_skew, 3))
+  }
+  
+  # Square root transformation (only if all values >= 0)
+  if (all(train_data$y >= 0)) {
+    sqrt_skew <- moments::skewness(sqrt(train_data$y))
+    message("  Sqrt(y) skewness: ", round(sqrt_skew, 3))
+  }
+} else {
+  message("- Skewness (", round(skew, 2), ") is acceptable; no transformation needed")
+}
+
+#Recommendation about transformation need 
+
+if (shapiro_result$p.value > 0.01) {
+  message("- Distribution is reasonably normal for linear regression")
+} else {
+  message("- Some deviation from normality, but may not be problematic")
+  message("  (Central Limit Theorem applies with sufficient sample size)")
+}
+
 
 # =============================================================================
 # 6. Summary: Key Findings
@@ -190,12 +266,30 @@ message("\n", strrep("-", 60))
 message("KEY FINDINGS: Response Variable y (Exam Score)")
 message(strrep("-", 60))
 
-# TODO: Summarize key findings:
-#   1. Central tendency (mean, median, range)
-#   2. Variability (SD, IQR)
-#   3. Distribution shape (skewness, kurtosis, normality test)
-#   4. Outliers (number and recommendation)
-#   5. Transformation recommendation
+message("
+1. CENTRAL TENDENCY:
+   - Mean exam score: ", round(mean(train_data$y), 1), "
+   - Median exam score: ", round(median(train_data$y), 1), "
+   - Range: ", round(min(train_data$y), 1), " to ", round(max(train_data$y), 1), "
+
+2. VARIABILITY:
+   - Standard deviation: ", round(sd(train_data$y), 1), "
+   - IQR: ", round(IQR(train_data$y), 1), "
+
+3. DISTRIBUTION SHAPE:
+   - Skewness: ", round(skew, 3), " (",
+        ifelse(abs(skew) < 0.5, "symmetric", ifelse(skew > 0, "right-skewed", "left-skewed")), ")
+   - Kurtosis: ", round(kurt, 3), "
+   - Normality test p-value: ", format.pval(shapiro_result$p.value, digits = 3), "
+
+4. OUTLIERS:
+   - Number of outliers (IQR rule): ", nrow(outliers), "
+   - ", ifelse(nrow(outliers) > 0, "Should investigate these observations", "No extreme outliers detected"), "
+
+5. RECOMMENDATION:
+   - ", ifelse(abs(skew) < 1, "No transformation recommended", "Consider log/sqrt transformation"), "
+   - Proceed with linear regression on untransformed y
+")
 
 message("\n", strrep("=", 60))
 message("EDA - RESPONSE VARIABLE COMPLETE")
