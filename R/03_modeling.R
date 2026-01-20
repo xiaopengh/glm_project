@@ -68,8 +68,8 @@ message("\n--- Building Multiple Regression Models ---")
 
 model_null <- lm(y ~ 1, data = train_data)
 
-# Model 2 (Parsimonious): Top 3-4 predictors from EDA
-model_parsimonious <- lm(y ~ study_hrs + attend_pct + sleep_qual,
+# Model 2 (minimal): Top 3-4 predictors from EDA
+model_minimal <- lm(y ~ study_hrs + attend_pct + sleep_qual,
                             data = train_data)
 
 # Model 3 (Main Effects): Key predictors without interactions
@@ -87,13 +87,38 @@ model_interaction <- lm(y ~ study_hrs + attend_pct + sleep_hrs +
                           study_hrs:sleep_qual + attend_pct:school_type,
                         data = train_data)
 
+
+# Let's pay special attention to the last model. Let us do Type I and II analysis:
+type_I <- anova(model_interaction)
+type_II <- Anova(model_interaction)
+message("\nType I and II analysis:")
+print(type_I)
+print(type_II)
+
+#In both tests, the p value for attend_pct:school_type are pretty high. 
+#Therefore, we decided to remove it from the model.
+
+model_new <- lm(y ~ study_hrs + attend_pct + sleep_hrs +
+                  sleep_qual + school_type + parent_educ + extra_act +
+                  study_hrs:sleep_qual,
+                data = train_data)
+
+test1 <- anova(model_new)
+test2 <- Anova(model_new)
+
+print(test1)
+print(test2)
+
+#we are satisfied with the new model.
+
 # Store all models in a list
 models <- list(
   "Null" = model_null,
-  "Parsimonious" = model_parsimonious,
+  "minimal" = model_minimal,
   "Main Effects" = model_main,
   "Full" = model_full,
-  "Interaction" = model_interaction
+  "Interaction" = model_interaction,
+  "New" = model_new
 )
 
 # =============================================================================
@@ -139,116 +164,28 @@ message("  - Lowest BIC: ", comparison_table$Model[which.min(comparison_table$BI
 
 
 # =============================================================================
-# 4. Formal Nested Model Tests
-# =============================================================================
-
-message("\n--- Nested Model F-Tests ---")
-
-# TODO: Compare nested models using anova():
-
-# Parsimonious vs Main Effects
-test_pars_main <- anova(model_parsimonious, model_main)
-message("\nParsimonious vs Main Effects:")
-print(test_pars_main)
-
-# Main Effects vs Full
-test_main_full <- anova(model_main, model_full)
-message("\nMain Effects vs Full:")
-print(test_main_full)
-
-# Main Effects vs Interaction
-test_main_int <- anova(model_main, model_interaction)
-message("\nMain Effects vs Interaction:")
-print(test_main_int)
-
-
-# =============================================================================
-# 5. Multicollinearity Check (VIF)
+# 4. Multicollinearity Check (VIF)
 # =============================================================================
 
 message("\n--- Multicollinearity Check (VIF) ---")
 
-# Check VIF for main effects model
-message("\nVIF for Main Effects Model:")
-vif_main <- car::vif(model_main)
-print(vif_main)
-
-# Check VIF for full model
-message("\nVIF for Full Model:")
-vif_full <- car::vif(model_full)
-print(vif_full)
-
-# Flag high VIF values
-if (any(vif_main > 5)) {
-  message("\nWARNING: VIF > 5 in Main Effects model - consider removing variables")
-  message("  High VIF: ", paste(names(vif_main)[vif_main > 5], collapse = ", "))
+#check VIF for the new model
+message("\nVIF for New Model:")
+if (length(coef(model_new)) > 2) {
+  print(car::vif(model_new))
 }
+message("No variables need to be removed, since each VIF value is lower than 5.
+        And we can see the VIF values of some variables are around 3 but still
+        acceptable. ")
 
-if (any(vif_full > 5)) {
-  message("\nWARNING: VIF > 5 in Full model - consider removing variables")
-  message("  High VIF: ", paste(names(vif_full)[vif_full > 5], collapse = ", "))
-}
 
 # =============================================================================
-# 6. Model Selection
-# =============================================================================
-
-message("\n--- Final Model Selection ---")
-
-# Criteria-based selection
-selection_summary <- tibble(
-  Criterion = c("Adj R²", "AIC", "BIC", "Parsimony", "VIF Check"),
-  Best_Model = c(
-    comparison_table$Model[which.max(comparison_table$Adj_R_squared)],
-    comparison_table$Model[which.min(comparison_table$AIC)],
-    comparison_table$Model[which.min(comparison_table$BIC)],
-    "Parsimonious or Main Effects",
-    ifelse(all(vif_main < 5), "Main Effects passes", "Check required")
-  )
-)
-
-print(selection_summary)
-
-# Decision logic
-message("\n--- Model Selection Decision ---")
-
-# Check if interaction terms are significant
-int_coefs <- tidy(model_interaction) |>
-  filter(str_detect(term, ":")) |>
-  filter(p.value < 0.05)
-
-if (nrow(int_coefs) > 0) {
-  message("\nSignificant interactions detected:")
-  print(int_coefs)
-  recommended_model <- "Interaction"
-} else {
-  message("\nNo significant interactions detected at α = 0.05")
-  
-  # Compare Main Effects vs Full
-  full_test_p <- test_main_full$`Pr(>F)`[2]
-  if (full_test_p < 0.05) {
-    message("Full model significantly better than Main Effects (p = ",
-            round(full_test_p, 4), ")")
-    recommended_model <- "Full"
-  } else {
-    message("Full model NOT significantly better (p = ", round(full_test_p, 4), ")")
-    message("Prefer more parsimonious Main Effects model")
-    recommended_model <- "Main Effects"
-  }
-}
-
-message("\n", strrep("-", 40))
-message("RECOMMENDED MODEL: ", recommended_model)
-message(strrep("-", 40))
-
-# Select final model
-final_model <- models[[recommended_model]]
-
-# =============================================================================
-# 7. Final Model Summary
+# 5. Final Model Summary
 # =============================================================================
 
 message("\n--- Final Model Summary ---")
+
+final_model <- model_new
 
 print(summary(final_model))
 
@@ -281,21 +218,13 @@ message("  BIC = ", round(final_glance$BIC, 2))
 
 
 # =============================================================================
-# 8. Save Model Objects
+# 6. Save Model Objects
 # =============================================================================
 
 message("\n--- Model Objects Saved ---")
-message("Available for subsequent scripts:")
-message("  - final_model: Selected final model")
-message("  - models: List of all candidate models")
-message("  - comparison_table: Model comparison metrics")
-
-# Final VIF check
-message("\nFinal Model VIF:")
-if (length(coef(final_model)) > 2) {
-  print(car::vif(final_model))
-}
+message("  - final_model: New model")
 
 message("\n", strrep("=", 60))
 message("MODEL BUILDING & SELECTION COMPLETE")
 message(strrep("=", 60), "\n")
+
