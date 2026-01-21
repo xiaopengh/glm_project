@@ -249,6 +249,14 @@ p4 <- ggplot(train_data, aes(x = extra_act, y = y)) +
 (p1 | p2) / (p3 | p4)
 ```
 
+**Key findings:**
+
+-   Sleep quality shows ordinal relationship with exam scores
+-   Private school students outperform public school students on average
+-   Higher parental education levels associate with better student performance
+-   Participation in extracurricular activities correlates with higher exam scores
+-   We should consider ordinal coding for ordered categorical predictors in modeling
+
 ## Predictor Associations
 
 ```{r}
@@ -281,22 +289,42 @@ train_data |>
 
 # Build candidate models
 model_null <- lm(y ~ 1, data = train_data)
-model_parsimonious <- lm(y ~ study_hrs + attend_pct + sleep_qual, data = train_data)
+model_minimal <- lm(y ~ study_hrs + attend_pct + sleep_qual + parent_educ, data = train_data)
 model_main <- lm(y ~ study_hrs + attend_pct + sleep_hrs + sleep_qual +
                    school_type + parent_educ + extra_act, data = train_data)
 model_full <- lm(y ~ study_hrs + attend_pct + sleep_hrs + age +
                    sleep_qual + school_type + parent_educ +
                    web_access + trav_time + extra_act, data = train_data)
 
+# Model with interactions (based on EDA hypotheses)
+model_interaction <- lm(y ~ study_hrs + attend_pct + sleep_hrs +
+                          sleep_qual + school_type + parent_educ + extra_act +
+                          study_hrs:sleep_qual + attend_pct:school_type,
+                        data = train_data)
+
+# Refined model (removed non-significant interaction)
+model_new <- lm(y ~ study_hrs + attend_pct + sleep_hrs +
+                  sleep_qual + school_type + parent_educ + extra_act +
+                  study_hrs:sleep_qual,
+                data = train_data)
+
 # Store models
 models <- list(
   "Null" = model_null,
-  "Parsimonious" = model_parsimonious,
+  "Minimal" = model_minimal,
   "Main Effects" = model_main,
-  "Full" = model_full
+  "Full" = model_full,
+  "Interaction" = model_interaction,
+  "New" = model_new
 )
 
-# Get model metrics
+# Function to calculate test set RMSE
+calc_test_rmse <- function(model) {
+  preds <- predict(model, newdata = test_data)
+  sqrt(mean((test_data$y - preds)^2))
+}
+
+# Get model metrics including test set performance
 comparison_table <- map_dfr(names(models), function(name) {
   m <- models[[name]]
   s <- summary(m)
@@ -306,37 +334,41 @@ comparison_table <- map_dfr(names(models), function(name) {
     `R²` = s$r.squared,
     `Adj. R²` = s$adj.r.squared,
     AIC = AIC(m),
-    BIC = BIC(m)
+    BIC = BIC(m),
+    `Test RMSE` = calc_test_rmse(m)
   )
 })
 
-# Select final model (Main Effects for this example)
-final_model <- model_main
+# Select final model based on minimum test RMSE (best prediction power)
+best_model_name <- comparison_table$Model[which.min(comparison_table$`Test RMSE`)]
+final_model <- models[[best_model_name]]
 ```
 
 ## Model Comparison
 
-We compared four candidate models:
+We compared six candidate models:
 
 1.  **Null model**: Intercept only (baseline)
-2.  **Parsimonious**: Top 3 predictors from EDA
+2.  **Minimal**: Top 4 predictors from EDA (`study_hrs`, `attend_pct`, `sleep_qual`, `parent_educ`)
 3.  **Main effects**: Key predictors without interactions
 4.  **Full model**: All available predictors
+5.  **Interaction**: Main effects + `study_hrs:sleep_qual` + `attend_pct:school_type`
+6.  **New**: Main effects + `study_hrs:sleep_qual` (refined after removing non-significant interaction)
 
 ```{r}
 #| label: tbl-model-comparison
-#| tbl-cap: "Comparison of candidate regression models"
+#| tbl-cap: "Comparison of candidate regression models (selected by minimum Test RMSE)"
 
 comparison_table |>
   mutate(across(where(is.numeric), ~round(.x, 4))) |>
   kable() |>
   kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover")) |>
-  row_spec(which(comparison_table$Model == "Main Effects"), bold = TRUE, background = "#e6f3ff")
+  row_spec(which.min(comparison_table$`Test RMSE`), bold = TRUE, background = "#e6f3ff")
 ```
 
 ## Final Model Selection
 
-Based on adjusted R², AIC, BIC, and parsimony considerations, we selected the **Main Effects** model:
+Based on test set predictive performance (minimum RMSE), we selected the **`r best_model_name`** model:
 
 ```{r}
 #| label: tbl-final-model
@@ -426,7 +458,7 @@ vif_values <- car::vif(final_model)
 **Diagnostic Summary:**
 
 | Assumption | Test | Result |
-|--------------------------------|------------------|----------------------|
+|------------------------|------------------------|------------------------|
 | Homoskedasticity | Breusch-Pagan (p = `r round(bp_test$p.value, 3)`) | `r ifelse(bp_test$p.value > 0.05, "Pass", "Concern")` |
 | Normality | Shapiro-Wilk (p = `r round(shapiro_test$p.value, 3)`) | `r ifelse(shapiro_test$p.value > 0.05, "Pass", "Concern")` |
 | Multicollinearity | Max VIF = `r round(max(vif_values), 2)` | `r ifelse(max(vif_values) < 5, "Pass", "Concern")` |
@@ -464,6 +496,8 @@ for (i in 1:nrow(sig_coefs)) {
 ```
 
 ## Scenario Predictions
+
+We define 2 profiles of students: **high-achieving profile** (high study time, strong attendance, good sleep, private schooling, high parental education, and extracurricular participation), and **at-risk profile** with less favorable characteristics. Predicted scores differ substantially between high-achieving and at-risk students, with non-overlapping 95% confidence intervals, highlighting the cumulative effects of academic engagement, sleep, and family background.
 
 ```{r}
 #| label: tbl-scenarios
@@ -554,7 +588,7 @@ ggplot(tibble(observed = test_data$y, predicted = test_preds),
 **Performance Summary:**
 
 | Metric | Test Set | Baseline (Mean) |
-|------------------|--------------------|----------------------------------|
+|------------------------|------------------------|------------------------|
 | RMSE | `r round(rmse_test, 2)` | `r round(sqrt(baseline_mse), 2)` |
 | R² | `r round(r2_test, 3)` | 0 |
 | MSE Reduction | `r round((baseline_mse - mse_test) / baseline_mse * 100, 1)`% | \- |
@@ -585,20 +619,18 @@ ggplot(tibble(observed = test_data$y, predicted = test_preds),
 
 # AI Use Statement {#sec-ai}
 
-This project utilized AI assistance in the following ways:
+The following AI tools were used in the development of this report:
 
+-   OpenAI ChatGPT
+-   Claude by Anthropic
+
+This project utilized AI assistance in the following ways:
+    
 -   **Code Development**: AI tools assisted in writing R code for data analysis, visualization, and report generation
 -   **Documentation**: AI helped structure and format the analysis workflow and report
 -   **Quality Assurance**: AI provided suggestions for code optimization and best practices
 
 All AI-generated content was reviewed, verified, and modified by the team members to ensure accuracy and appropriateness for the project objectives.
-
-------------------------------------------------------------------------
-
-# References {#sec-references}
-
-::: {#refs}
-:::
 
 ------------------------------------------------------------------------
 

@@ -68,8 +68,8 @@ message("\n--- Building Multiple Regression Models ---")
 
 model_null <- lm(y ~ 1, data = train_data)
 
-# Model 2 (minimal): Top 3-4 predictors from EDA
-model_minimal <- lm(y ~ study_hrs + attend_pct + sleep_qual,
+# Model 2 (minimal): Top 4 predictors from EDA
+model_minimal <- lm(y ~ study_hrs + attend_pct + sleep_qual + parent_educ,
                             data = train_data)
 
 # Model 3 (Main Effects): Key predictors without interactions
