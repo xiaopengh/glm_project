@@ -16,10 +16,10 @@ message(strrep("=", 60))
 # 1. Validation Protocol Documentation
 # =============================================================================
 
-message("\n--- Validation Protocol ---")
+message("\n--- Running Checks---")
 
 message("
-VALIDATION PROTOCOL:
+Checking Data:
   - Data split: 80% training / 20% test
   - Random seed: set.seed(42) for reproducibility
   - Split performed BEFORE any model fitting
@@ -45,7 +45,7 @@ message("\n--- Baseline Model: Training Mean ---")
 # Baseline: predict training mean for all test observations
 baseline_pred <- mean(train_data$y)
 
-# Calculate baseline metrics
+# Define baseline metrics
 baseline_residuals <- test_data$y - baseline_pred
 baseline_mse <- mean(baseline_residuals^2)
 baseline_rmse <- sqrt(baseline_mse)
