@@ -60,20 +60,20 @@ Understanding the factors that influence student academic performance is crucial
 
 The primary objectives of this analysis are:
 
-1. **Exploratory Analysis**: Understand the distribution of exam scores and their relationships with potential predictors
-2. **Model Development**: Build and compare multiple regression models to identify the best predictors of academic performance
-3. **Model Validation**: Assess model assumptions and evaluate predictive performance on held-out data
-4. **Practical Insights**: Provide interpretable results that can inform educational interventions
+1.  **Exploratory Analysis**: Understand the distribution of exam scores and their relationships with potential predictors
+2.  **Model Development**: Build and compare multiple regression models to identify the best predictors of academic performance
+3.  **Model Validation**: Assess model assumptions and evaluate predictive performance on held-out data
+4.  **Practical Insights**: Provide interpretable results that can inform educational interventions
 
 ## Dataset Overview
 
 The dataset contains **`r nrow(data_clean)` observations** and **`r ncol(data_clean)` variables**, including:
 
-- **Response variable**: `y` (exam score, continuous)
-- **Continuous predictors**: `age`, `study_hrs`, `sleep_hrs`, `attend_pct`
-- **Categorical predictors**: `sexe`, `school_type`, `parent_educ`, `sleep_qual`, `web_access`, `trav_time`, `extra_act`, `study_method`
+-   **Response variable**: `y` (exam score, continuous)
+-   **Continuous predictors**: `age`, `study_hrs`, `sleep_hrs`, `attend_pct`
+-   **Categorical predictors**: `sexe`, `school_type`, `parent_educ`, `sleep_qual`, `web_access`, `trav_time`, `extra_act`, `study_method`
 
----
+------------------------------------------------------------------------
 
 # Methods {#sec-methods}
 
@@ -101,16 +101,16 @@ data_clean |>
 
 Our analysis follows a systematic approach:
 
-1. **Data Preparation**: Convert coded variables to labeled factors, create train/test split (80/20)
-2. **Exploratory Data Analysis**: Examine distributions, correlations, and associations
-3. **Model Building**: Develop multiple candidate models using different predictor sets
-4. **Model Selection**: Compare models using adjusted R², AIC, BIC, and nested F-tests
-5. **Diagnostics**: Verify model assumptions (linearity, homoskedasticity, normality)
-6. **Validation**: Evaluate predictive performance on held-out test data
+1.  **Data Preparation**: Convert coded variables to labeled factors, create train/test split (80/20)
+2.  **Exploratory Data Analysis**: Examine distributions, correlations, and associations
+3.  **Model Building**: Develop multiple candidate models using different predictor sets
+4.  **Model Selection**: Compare models using adjusted R², AIC, BIC, and nested F-tests
+5.  **Diagnostics**: Verify model assumptions (linearity, homoskedasticity, normality)
+6.  **Validation**: Evaluate predictive performance on held-out test data
 
 All analyses use `set.seed(42)` for reproducibility.
 
----
+------------------------------------------------------------------------
 
 # Exploratory Data Analysis {#sec-eda}
 
@@ -162,11 +162,30 @@ train_data |>
   kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
 ```
 
+```{r}
+#| label: tbl-response-metrics
+#| tbl-cap: "Shape metrics for exam scores"
+
+shapiro_result <- shapiro.test(train_data$y)
+skew <- skewness(train_data$y)
+kurt <- kurtosis(train_data$y)
+
+tibble(
+  Metric = c("Shapiro-Wilk p-value", "Skewness", "Kurtosis"),
+  Value = c(round(shapiro_result$p.value, 4), 
+            round(skew$Skewness, 4), 
+            round(kurt$Kurtosis, 4))
+  ) |>
+  kable() |>
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
+```
+
 **Key findings:**
 
-- Mean exam score: `r round(mean(train_data$y), 1)` (SD = `r round(sd(train_data$y), 1)`)
-- Scores range from `r round(min(train_data$y), 1)` to `r round(max(train_data$y), 1)`
-- Distribution is approximately symmetric with no severe skewness
+-   Mean exam score: `r round(mean(train_data$y), 1)` (SD = `r round(sd(train_data$y), 1)`)
+-   Scores range from `r round(min(train_data$y), 1)` to `r round(max(train_data$y), 1)`
+-   Distribution is approximately symmetric with no severe skewness
+-   Shapiro-Wilk test (p = `r round(shapiro_result$p.value, 4)`) suggests some deviation from normality, while the symmetric shape and absence of skewness indicate that it is not problematic for the Gaussian assumption of response variable in linear regression
 
 ## Continuous Predictors
 
@@ -189,9 +208,9 @@ create_scatter <- function(data, xvar) {
 
 **Key findings:**
 
-- `study_hrs` and `attend_pct` show positive linear relationships with exam scores
-- `sleep_hrs` shows a moderate positive association
-- `age` shows minimal relationship with scores
+-   `study_hrs` and `attend_pct` show positive linear relationships with exam scores
+-   `sleep_hrs` shows a moderate positive association
+-   `age` shows minimal relationship with scores
 
 ## Categorical Predictors
 
@@ -249,10 +268,10 @@ train_data |>
 
 **Key findings:**
 
-- `study_hrs` and `attend_pct` have the strongest correlations with exam scores
-- No severe multicollinearity detected among predictors (all |r| < 0.5)
+-   `study_hrs` and `attend_pct` have the strongest correlations with exam scores
+-   No severe multicollinearity detected among predictors (all \|r\| \< 0.5)
 
----
+------------------------------------------------------------------------
 
 # Model Building {#sec-modeling}
 
@@ -299,10 +318,10 @@ final_model <- model_main
 
 We compared four candidate models:
 
-1. **Null model**: Intercept only (baseline)
-2. **Parsimonious**: Top 3 predictors from EDA
-3. **Main effects**: Key predictors without interactions
-4. **Full model**: All available predictors
+1.  **Null model**: Intercept only (baseline)
+2.  **Parsimonious**: Top 3 predictors from EDA
+3.  **Main effects**: Key predictors without interactions
+4.  **Full model**: All available predictors
 
 ```{r}
 #| label: tbl-model-comparison
@@ -339,7 +358,7 @@ tidy(final_model, conf.int = TRUE) |>
   kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
 ```
 
----
+------------------------------------------------------------------------
 
 # Model Diagnostics {#sec-diagnostics}
 
@@ -407,12 +426,12 @@ vif_values <- car::vif(final_model)
 **Diagnostic Summary:**
 
 | Assumption | Test | Result |
-|------------|------|--------|
+|--------------------------------|------------------|----------------------|
 | Homoskedasticity | Breusch-Pagan (p = `r round(bp_test$p.value, 3)`) | `r ifelse(bp_test$p.value > 0.05, "Pass", "Concern")` |
 | Normality | Shapiro-Wilk (p = `r round(shapiro_test$p.value, 3)`) | `r ifelse(shapiro_test$p.value > 0.05, "Pass", "Concern")` |
 | Multicollinearity | Max VIF = `r round(max(vif_values), 2)` | `r ifelse(max(vif_values) < 5, "Pass", "Concern")` |
 
----
+------------------------------------------------------------------------
 
 # Model Interpretation {#sec-interpretation}
 
@@ -426,7 +445,8 @@ sig_coefs <- tidy(final_model) |>
   filter(p.value < 0.05, term != "(Intercept)")
 ```
 
-Based on the final model, the following predictors have statistically significant effects on exam scores (p < 0.05):
+Based on the final model, the following predictors have statistically significant effects on exam scores (p \< 0.05):
+
 ```{r}
 #| results: asis
 
@@ -491,7 +511,7 @@ kable(results) |>
   kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
 ```
 
----
+------------------------------------------------------------------------
 
 # Predictive Performance {#sec-prediction}
 
@@ -534,53 +554,53 @@ ggplot(tibble(observed = test_data$y, predicted = test_preds),
 **Performance Summary:**
 
 | Metric | Test Set | Baseline (Mean) |
-|--------|----------|-----------------|
+|------------------|--------------------|----------------------------------|
 | RMSE | `r round(rmse_test, 2)` | `r round(sqrt(baseline_mse), 2)` |
 | R² | `r round(r2_test, 3)` | 0 |
-| MSE Reduction | `r round((baseline_mse - mse_test) / baseline_mse * 100, 1)`% | - |
+| MSE Reduction | `r round((baseline_mse - mse_test) / baseline_mse * 100, 1)`% | \- |
 
----
+------------------------------------------------------------------------
 
 # Conclusion {#sec-conclusion}
 
 ## Key Findings
 
-1. **Strongest Predictors**: Study hours and attendance percentage are the most important predictors of exam scores
-2. **Model Performance**: The final model explains approximately `r round(summary(final_model)$r.squared * 100, 0)`% of variance in training data and `r round(r2_test * 100, 0)`% in test data
-3. **Practical Implications**: Students who study more and attend classes regularly tend to achieve higher exam scores
+1.  **Strongest Predictors**: Study hours and attendance percentage are the most important predictors of exam scores
+2.  **Model Performance**: The final model explains approximately `r round(summary(final_model)$r.squared * 100, 0)`% of variance in training data and `r round(r2_test * 100, 0)`% in test data
+3.  **Practical Implications**: Students who study more and attend classes regularly tend to achieve higher exam scores
 
 ## Limitations
 
-- Cross-sectional design limits causal inference
-- Self-reported variables may have measurement error
-- Model explains `r round(100 - summary(final_model)$r.squared * 100, 0)`% unexplained variance suggests other factors influence scores
+-   Cross-sectional design limits causal inference
+-   Self-reported variables may have measurement error
+-   Model explains `r round(100 - summary(final_model)$r.squared * 100, 0)`% unexplained variance suggests other factors influence scores
 
 ## Recommendations
 
-- Focus interventions on improving study habits and attendance
-- Consider collecting additional variables for future models
-- Validate findings with independent datasets
+-   Focus interventions on improving study habits and attendance
+-   Consider collecting additional variables for future models
+-   Validate findings with independent datasets
 
----
+------------------------------------------------------------------------
 
 # AI Use Statement {#sec-ai}
 
 This project utilized AI assistance in the following ways:
 
-- **Code Development**: AI tools assisted in writing R code for data analysis, visualization, and report generation
-- **Documentation**: AI helped structure and format the analysis workflow and report
-- **Quality Assurance**: AI provided suggestions for code optimization and best practices
+-   **Code Development**: AI tools assisted in writing R code for data analysis, visualization, and report generation
+-   **Documentation**: AI helped structure and format the analysis workflow and report
+-   **Quality Assurance**: AI provided suggestions for code optimization and best practices
 
 All AI-generated content was reviewed, verified, and modified by the team members to ensure accuracy and appropriateness for the project objectives.
 
----
+------------------------------------------------------------------------
 
 # References {#sec-references}
 
 ::: {#refs}
 :::
 
----
+------------------------------------------------------------------------
 
 # Appendix {#sec-appendix}
 
@@ -594,16 +614,16 @@ sessionInfo()
 
 ## Variable Codebook
 
-| Variable | Type | Description | Levels/Range |
-|----------|------|-------------|--------------|
-| y | Continuous | Exam score | 0-100 |
-| age | Continuous | Student age | Years |
-| study_hrs | Continuous | Weekly study hours | Hours |
-| sleep_hrs | Continuous | Daily sleep hours | Hours |
-| attend_pct | Continuous | Attendance percentage | 0-100% |
-| sexe | Categorical | Gender | Female, Male, Other |
-| school_type | Categorical | School type | Public, Private |
-| parent_educ | Ordinal | Parental education | 6 levels |
-| sleep_qual | Ordinal | Sleep quality | Poor, Average, Good |
-| web_access | Binary | Internet access | No, Yes |
-| extra_act | Binary | Extracurricular activities | No, Yes |
+| Variable    | Type        | Description                | Levels/Range        |
+|-------------|-------------|----------------------------|---------------------|
+| y           | Continuous  | Exam score                 | 0-100               |
+| age         | Continuous  | Student age                | Years               |
+| study_hrs   | Continuous  | Weekly study hours         | Hours               |
+| sleep_hrs   | Continuous  | Daily sleep hours          | Hours               |
+| attend_pct  | Continuous  | Attendance percentage      | 0-100%              |
+| sexe        | Categorical | Gender                     | Female, Male, Other |
+| school_type | Categorical | School type                | Public, Private     |
+| parent_educ | Ordinal     | Parental education         | 6 levels            |
+| sleep_qual  | Ordinal     | Sleep quality              | Poor, Average, Good |
+| web_access  | Binary      | Internet access            | No, Yes             |
+| extra_act   | Binary      | Extracurricular activities | No, Yes             |
