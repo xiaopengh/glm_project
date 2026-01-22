@@ -2,14 +2,10 @@
 title: "Predicting Student Exam Scores: A Multiple Linear Regression Analysis"
 subtitle: "GLM Course Project"
 author:
-  - name: "Yugoo"
-    affiliation: "Data Loading & Response EDA, Model Building"
-  - name: "Xiaopeng"
-    affiliation: "Continuous Predictors EDA, Model Diagnostics"
-  - name: "Shuaibo"
-    affiliation: "Categorical Predictors EDA, Interpretation"
-  - name: "Yicheng"
-    affiliation: "Associations EDA, Model Building, Prediction"
+  - name: "Bo-Cheng Lu"
+  - name: "Xiaopeng Zhang"
+  - name: "Shuaibo Huang"
+  - name: "Yicheng Zhang"
 date: today
 date-format: "MMMM D, YYYY"
 format:
@@ -52,11 +48,7 @@ knitr::opts_chunk$set(
 
 # Introduction {#sec-intro}
 
-## Background and Motivation
-
-Understanding the factors that influence student academic performance is crucial for educators, policymakers, and researchers. This study aims to develop a multiple linear regression model to predict student exam scores based on various demographic, behavioral, and environmental factors.
-
-## Research Objectives
+## Project Objectives
 
 The primary objectives of this analysis are:
 
@@ -67,7 +59,7 @@ The primary objectives of this analysis are:
 
 ## Dataset Overview
 
-The dataset contains **`r nrow(data_clean)` observations** and **`r ncol(data_clean)` variables**, including:
+The dataset contains **`r nrow(data_clean)` observations** and **`r ncol(data_clean) - 1` variables** (excluding ID), including:
 
 -   **Response variable**: `y` (exam score, continuous)
 -   **Continuous predictors**: `age`, `study_hrs`, `sleep_hrs`, `attend_pct`
@@ -274,6 +266,27 @@ train_data |>
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 ```
 
+```{r}
+#| label: fig-interaction
+#| fig-cap: "Visual check for key interactions"
+
+p_int_study_sleep <- ggplot(train_data, aes(x = study_hrs, y = y, color = sleep_qual)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "y vs Study Hours by Sleep Quality",
+       x = "Study Hours", y = "Exam Score", color = "Sleep Quality") +
+  theme_glm()
+
+p_int_attend_school <- ggplot(train_data, aes(x = attend_pct, y = y, color = school_type)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "y vs Attendance by School Type",
+       x = "Attendance %", y = "Exam Score", color = "School Type") +
+  theme_glm()
+
+p_int_study_sleep | p_int_attend_school
+```
+
 **Key findings:**
 
 -   `study_hrs` and `attend_pct` have the strongest correlations with exam scores
@@ -350,7 +363,7 @@ We compared six candidate models:
 
 1.  **Null model**: Intercept only (baseline)
 2.  **Minimal**: Top 4 predictors from EDA (`study_hrs`, `attend_pct`, `sleep_qual`, `parent_educ`)
-3.  **Main effects**: Key predictors without interactions
+3.  **Main effects**: Minimal predictors + `sleep_hrs` + `school_type` + `extra_act` without interactions
 4.  **Full model**: All available predictors
 5.  **Interaction**: Main effects + `study_hrs:sleep_qual` + `attend_pct:school_type`
 6.  **New**: Main effects + `study_hrs:sleep_qual` (refined after removing non-significant interaction)
@@ -369,6 +382,8 @@ comparison_table |>
 ## Final Model Selection
 
 Based on test set predictive performance (minimum RMSE), we selected the **`r best_model_name`** model:
+
+**Model Formula:** `r deparse(formula(final_model)) |> paste(collapse = " ")`
 
 ```{r}
 #| label: tbl-final-model
@@ -458,7 +473,7 @@ vif_values <- car::vif(final_model)
 **Diagnostic Summary:**
 
 | Assumption | Test | Result |
-|------------------------|------------------------|------------------------|
+|----|----|----|
 | Homoskedasticity | Breusch-Pagan (p = `r round(bp_test$p.value, 3)`) | `r ifelse(bp_test$p.value > 0.05, "Pass", "Concern")` |
 | Normality | Shapiro-Wilk (p = `r round(shapiro_test$p.value, 3)`) | `r ifelse(shapiro_test$p.value > 0.05, "Pass", "Concern")` |
 | Multicollinearity | Max VIF = `r round(max(vif_values), 2)` | `r ifelse(max(vif_values) < 5, "Pass", "Concern")` |
@@ -588,7 +603,7 @@ ggplot(tibble(observed = test_data$y, predicted = test_preds),
 **Performance Summary:**
 
 | Metric | Test Set | Baseline (Mean) |
-|------------------------|------------------------|------------------------|
+|----|----|----|
 | RMSE | `r round(rmse_test, 2)` | `r round(sqrt(baseline_mse), 2)` |
 | R² | `r round(r2_test, 3)` | 0 |
 | MSE Reduction | `r round((baseline_mse - mse_test) / baseline_mse * 100, 1)`% | \- |
@@ -625,8 +640,8 @@ The following AI tools were used in the development of this report:
 -   Claude by Anthropic
 
 This project utilized AI assistance in the following ways:
-    
--   **Code Development**: AI tools assisted in writing R code for data analysis, visualization, and report generation
+
+-   **Visualization and Table making**: AI wrote codes concerning visualizations and tables.
 -   **Documentation**: AI helped structure and format the analysis workflow and report
 -   **Quality Assurance**: AI provided suggestions for code optimization and best practices
 
@@ -643,19 +658,3 @@ All AI-generated content was reviewed, verified, and modified by the team member
 
 sessionInfo()
 ```
-
-## Variable Codebook
-
-| Variable    | Type        | Description                | Levels/Range        |
-|-------------|-------------|----------------------------|---------------------|
-| y           | Continuous  | Exam score                 | 0-100               |
-| age         | Continuous  | Student age                | Years               |
-| study_hrs   | Continuous  | Weekly study hours         | Hours               |
-| sleep_hrs   | Continuous  | Daily sleep hours          | Hours               |
-| attend_pct  | Continuous  | Attendance percentage      | 0-100%              |
-| sexe        | Categorical | Gender                     | Female, Male, Other |
-| school_type | Categorical | School type                | Public, Private     |
-| parent_educ | Ordinal     | Parental education         | 6 levels            |
-| sleep_qual  | Ordinal     | Sleep quality              | Poor, Average, Good |
-| web_access  | Binary      | Internet access            | No, Yes             |
-| extra_act   | Binary      | Extracurricular activities | No, Yes             |

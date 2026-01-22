@@ -77,9 +77,7 @@ model_main <- lm(y ~ study_hrs + attend_pct + sleep_hrs + sleep_qual +
                       school_type + parent_educ + extra_act, data = train_data)
 
 # Model 4 (Full)
-model_full <- lm(y ~ study_hrs + attend_pct + sleep_hrs + age +
-                      sleep_qual + school_type + parent_educ +
-                      web_access + trav_time + extra_act, data = train_data)
+model_full <- lm(y ~ ., data = train_data)
 
 # Model 5 (Interaction): Based on Yicheng's hypotheses
 model_interaction <- lm(y ~ study_hrs + attend_pct + sleep_hrs +

@@ -75,24 +75,6 @@ chi_web_school <- chi_square_test(train_data, "web_access", "school_type")
 chi_extra_method <- chi_square_test(train_data, "extra_act", "study_method")
 chi_sleep_extra <- chi_square_test(train_data, "sleep_qual", "extra_act")
 
-
-
-
-
-
-
-# Significant associations (potential collinearity):
-#   - school_type ↔ parent_educ (χ²=191.81, p<0.001) - strong link
-#   - web_access ↔ school_type (χ²=57.17, p<0.001)
-#   - sleep_qual ↔ extra_act (χ²=34.03, p<0.001)
-#
-# Independent variables:
-#   - extra_act ↔ study_method (p=0.137) - safe to use together
-#
-# Action: Consider variable selection for highly associated pairs
-
-
-
 # =============================================================================
 # 3. Mixed Associations (Categorical-Numeric)
 # =============================================================================
